@@ -6,17 +6,19 @@
 
 typedef char ALIGN[16];
 
+# store memory size, if freed or not
 union header {
 	struct {
 		size_t size;
 		unsigned is_free;
+		# to link and verify if sbrk or params are part of the group
 		union header *next;
 	} s;
 	/* force the header to be aligned to 16 bytes */
 	ALIGN stub;
 };
 typedef union header header_t;
-
+# for the linkedlist
 header_t *head = NULL, *tail = NULL;
 pthread_mutex_t global_malloc_lock;
 
@@ -118,50 +120,3 @@ void *malloc(size_t size)
 	return (void*)(header + 1);
 }
 
-void *calloc(size_t num, size_t nsize)
-{
-	size_t size;
-	void *block;
-	if (!num || !nsize)
-		return NULL;
-	size = num * nsize;
-	/* check mul overflow */
-	if (nsize != size / num)
-		return NULL;
-	block = malloc(size);
-	if (!block)
-		return NULL;
-	memset(block, 0, size);
-	return block;
-}
-
-void *realloc(void *block, size_t size)
-{
-	header_t *header;
-	void *ret;
-	if (!block || !size)
-		return malloc(size);
-	header = (header_t*)block - 1;
-	if (header->s.size >= size)
-		return block;
-	ret = malloc(size);
-	if (ret) {
-		/* Relocate contents to the new bigger block */
-		memcpy(ret, block, header->s.size);
-		/* Free the old memory block */
-		free(block);
-	}
-	return ret;
-}
-
-/* A debug function to print the entire link list */
-void print_mem_list()
-{
-	header_t *curr = head;
-	printf("head = %p, tail = %p \n", (void*)head, (void*)tail);
-	while(curr) {
-		printf("addr = %p, size = %zu, is_free=%u, next=%p\n",
-			(void*)curr, curr->s.size, curr->s.is_free, (void*)curr->s.next);
-		curr = curr->s.next;
-	}
-}
