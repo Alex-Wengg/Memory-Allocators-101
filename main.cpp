@@ -15,6 +15,14 @@ union header {
 		union header *next;
 	} s;
 	/* force the header to be aligned to 16 bytes */
+	/* The ALIGN type is a typedef for an array of characters with a length of 16.
+
+This declaration is used to ensure that each instance of union header has an alignment of 16 bytes,
+	which can improve the performance of memory accesses on some architectures. 
+	This is because some hardware platforms can access memory more efficiently if it is aligned on certain byte boundaries.
+
+The stub member of the union header is not actually used for anything; 
+	it just serves as a way to reserve 16 bytes of space in the header so that the header itself is properly aligned. */
 	ALIGN stub;
 };
 typedef union header header_t;
